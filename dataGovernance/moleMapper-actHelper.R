@@ -58,14 +58,14 @@ moleMapperRegisterIDU <- function(userName, pathToIDU){
                         iduRegisteredDate = as.character(Sys.Date()),
                         iduAccepted = as.logical(NA),
                         iduAcceptedBy = as.character(NA),
-                        iduRcceptedDate = as.character(NA),
+                        iduAcceptedDate = as.character(NA),
                         irb = as.integer(NA),
                         irbId = as.character(NA),
                         irbRegisteredBy = as.character(NA),
                         irbRegisteredDate = as.character(NA),
                         irbAccepted = as.logical(NA),
                         irbAcceptedBy = as.character(NA),
-                        irbRcceptedDate = as.character(NA),
+                        irbAcceptedDate = as.character(NA),
                         stringsAsFactors = FALSE)
   rownames(addThis) <- NULL
   
@@ -122,7 +122,7 @@ moleMapperAcceptIDU <- function(principalId, iduId){
   cat("tracking table updated")
   
   require(githubr)
-  mmRepo <- getRepo('brian-bot/moleMapperCuration')
+  mmRepo <- getRepo('brian-bot/MoleMapper-sdata')
   sourceRepoFile(mmRepo, 'dataGovernance/iduWikiPop.R')
   cat("community wiki updated")
   
