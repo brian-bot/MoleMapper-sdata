@@ -4,8 +4,8 @@ synapseLogin()
 
 td <- synTableQuery('SELECT * FROM syn7210333')
 theseOnes <- td@values
-theseOnes <- theseOnes[ which(theseOnes$accepted), ]
-theseOnes <- theseOnes[ order(theseOnes$acceptedDate), ]
+theseOnes <- theseOnes[ which(theseOnes$iduAccepted), ]
+theseOnes <- theseOnes[ order(theseOnes$iduAcceptedDate), ]
 
 urlEncodings <- c('{' = "%7B",
                   '}' = "%7D",
