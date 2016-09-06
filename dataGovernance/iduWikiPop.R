@@ -44,7 +44,7 @@ for(i in 1:nrow(theseOnes)){
   newEntry <- paste0("##### **Researcher**: ", userInfo$verificationSubmission$firstName, " ", userInfo$verificationSubmission$lastName, " ([profile](", theseOnes$profileLink[i], "))\n",
                      "##### **ORCID**: ", userInfo$verificationSubmission$orcid, "\n",
                      "##### **Affiliation**: ", userInfo$verificationSubmission$company, "\n",
-                     "##### **Intended Data Use Statement (accepted on ", theseOnes$acceptedDate[i], "):**\n", iduText, "\n-----\n")
+                     "##### **Intended Data Use Statement (accepted on ", theseOnes$iduAcceptedDate[i], "):**\n", iduText, "\n-----\n")
   fullWiki <- paste0(fullWiki, newEntry)
 }
 
