@@ -93,7 +93,7 @@ moleMapperAcceptIDU <- function(principalId, iduId){
   if(nrow(res) > 1){
     stop('Somehow there is more than 1 IDU for user / iduId combination')
   }
-  if(!is.na(res$accepted)){
+  if(!is.na(res$iduAccepted)){
     stop(paste0('IDU status already set for user: ', principalId, '\n    accepted = ', res$accepted))
   }
   
