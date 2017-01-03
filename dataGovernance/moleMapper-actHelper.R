@@ -94,7 +94,7 @@ moleMapperAcceptIDU <- function(principalId, iduId){
     stop('Somehow there is more than 1 IDU for user / iduId combination')
   }
   if(!is.na(res$iduAccepted)){
-    stop(paste0('IDU status already set for user: ', principalId, '\n    accepted = ', res$accepted))
+    stop(paste0('IDU status already set for user: ', principalId, '\n    accepted = ', res$iduAccepted))
   }
   
   ## GET ALL OF THE USER INFORMATION
@@ -128,3 +128,103 @@ moleMapperAcceptIDU <- function(principalId, iduId){
   
   return(onWeb(td@schema))
 }
+
+
+#####
+## INPUTS
+##    principalId: the principal ID for the Synapse user (e.g. '273979')
+##    pathToIRB: the local path to the IRB documentation submitted to the ACT (e.g. '~/Desktop/irb.doc')
+#####
+moleMapperRegisterIRB <- function(principalId, pathToIRB){
+  
+  ## GET THE REGISTRATION TABLE
+  td <- synTableQuery(paste0("SELECT * FROM syn7210333 WHERE principalId='", principalId, "'"))
+  res <- td@values
+
+  ## CHECK THE TABLE
+  if(nrow(res) == 0){
+    stop('There are no records for this user')
+  }
+  if(nrow(res) > 1){
+    stop('Somehow there is more than 1 record for this user')
+  }
+  if(!res$iduAccepted){
+    stop(paste0('IDU has not yet been accepted for user: ', principalId, '\n    accepted = ', res$iduAccepted))
+  }
+  if(!is.na(res$irbAccepted)){
+    stop(paste0('IRB status already set for user: ', principalId, '\n    accepted = ', res$irbAccepted))
+  }
+  
+  ## GET ALL OF THE USER INFORMATION
+  userInfo <- synRestGET(paste0('/user/', principalId, '/bundle?mask=63'))
+  
+  ## MOVE THE IRB TO TEMP DIRECTORY AND RENAME
+  newPathToIRB <- file.path(tempdir(), paste0(userInfo$userProfile$userName, "-IRB.", file_ext(pathToIRB)))
+  if(!file.copy(pathToIRB, newPathToIRB, overwrite = TRUE)){
+    stop("could not copy file")
+  }
+  
+  ## STORE THE IRB AS A FILEHANDLE
+  irbFh <- synapseClient:::uploadAndAddToCacheMap(newPathToIRB, synapseClient:::getUploadDestinations(synGet(td@schema)$properties$parentId)[[1]])
+  
+  res$irb <- irbFh$id
+  res$irbId <- as.character(irbFh$id)
+  res$irbRegisteredBy <- synGetUserProfile()@userName
+  res$irbRegisteredDate = as.character(Sys.Date())
+  td@values <- res
+  td <- synStore(td, retrieveData=TRUE)
+  cat("tracking table updated")
+  
+  return(onWeb(td@schema))
+}
+
+
+#####
+## INPUTS
+##    principalId: the principal ID for the Synapse user (e.g. '273979')
+##    irbId: the irbId from the registered IRB for acceptance (e.g. '1234567')
+#####
+moleMapperAcceptIRB <- function(principalId, irbId){
+  
+  ## GET THE REGISTRATION TABLE
+  td <- synTableQuery(paste0("SELECT * FROM syn7210333 WHERE principalId='", principalId, "' AND irbId='", irbId, "'"))
+  res <- td@values
+  
+  ## CHECK THE TABLE
+  if(nrow(res) == 0){
+    stop('There are no IRBs for user / irbId combination')
+  }
+  if(nrow(res) > 1){
+    stop('Somehow there is more than 1 IRB for user / irbId combination')
+  }
+  if(!is.na(res$irbAccepted)){
+    stop(paste0('IRB status already set for user: ', principalId, '\n    accepted = ', res$irbAccepted))
+  }
+  
+  ## GET ALL OF THE USER INFORMATION
+  userInfo <- synRestGET(paste0('/user/', principalId, '/bundle?mask=63'))
+  
+  ## CHECK IF THE USER IS VERIFIED AND CERTIFIED
+  if( !(userInfo$isVerified & userInfo$isCertified) ){
+    stop(paste0('USER IS NOT COMPLIANT:\n  isVerified = ', userInfo$isVerified, '\n  isCertified = ', userInfo$isCertified))
+  }
+  
+  ## LIFT THE LEVEL 3 RESTRICTION
+  accessRestrictionLevel3 <- "7209089"
+  actApproval <- list(concreteType="org.sagebionetworks.repo.model.ACTAccessApproval", 
+                      requirementId=accessRestrictionLevel3, 
+                      accessorId=principalId, 
+                      approvalStatus="APPROVED")
+  actApproval<-synRestPOST("/accessApproval", actApproval)
+  
+  cat("IRB ACCEPTED AND USER RESTRICTION LIFTED")
+  res$irbAccepted <- TRUE
+  res$irbAcceptedBy <- synGetUserProfile()@userName
+  res$irbAcceptedDate = as.character(Sys.Date())
+  td@values <- res
+  td <- synStore(td, retrieveData=TRUE)
+  cat("tracking table updated")
+  
+  return(onWeb(td@schema))
+}
+
